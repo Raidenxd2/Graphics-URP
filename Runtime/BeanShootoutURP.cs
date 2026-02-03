@@ -1,13 +1,13 @@
-#if UNITY_EDITOR
+#if UNITY_EDITOR || KILLITMYSELF_URP
 using UnityEditor;
 #endif
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR || KILLITMYSELF_URP
 [InitializeOnLoad]
 #endif
 public static class BeanShootoutURP
 {
-#if UNITY_EDITOR
+#if UNITY_EDITOR || KILLITMYSELF_URP
     static BeanShootoutURP()
     {
         EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
