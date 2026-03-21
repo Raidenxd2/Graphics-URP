@@ -1221,7 +1221,7 @@ namespace UnityEngine.Rendering.Universal
         public ProbeVolumeTextureMemoryBudget probeVolumeMemoryBudget
         {
             get => m_ProbeVolumeMemoryBudget;
-            internal set => m_ProbeVolumeMemoryBudget = value;
+            set => m_ProbeVolumeMemoryBudget = value;
         }
 
         /// <summary>
@@ -1230,7 +1230,7 @@ namespace UnityEngine.Rendering.Universal
         public ProbeVolumeBlendingTextureMemoryBudget probeVolumeBlendingMemoryBudget
         {
             get => m_ProbeVolumeBlendingMemoryBudget;
-            internal set => m_ProbeVolumeBlendingMemoryBudget = value;
+            set => m_ProbeVolumeBlendingMemoryBudget = value;
         }
 
         /// <summary>
@@ -1923,7 +1923,7 @@ namespace UnityEngine.Rendering.Universal
                 k_AssetPreviousVersion = k_AssetVersion;
                 k_AssetVersion = 12;
             }
-            
+
             if (k_AssetVersion < 13)
             {
                 k_AssetPreviousVersion = k_AssetVersion;
@@ -1993,7 +1993,7 @@ namespace UnityEngine.Rendering.Universal
 #pragma warning restore CS0618 // Type or member is obsolete
                 asset.k_AssetPreviousVersion = 12;
             }
-            
+
             if (asset.k_AssetPreviousVersion < 13)
             {
                 asset.k_AssetPreviousVersion = 13;
