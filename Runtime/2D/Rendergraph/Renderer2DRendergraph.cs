@@ -56,6 +56,7 @@ namespace UnityEngine.Rendering.Universal
         CopyDepthPass m_CopyDepthPass;
         UpscalePass m_UpscalePass;
         CopyCameraSortingLayerPass m_CopyCameraSortingLayerPass;
+        CapturePass m_CapturePass;
         FinalBlitPass m_FinalBlitPass;
         FinalBlitPass m_OffscreenUICoverPrepass;
         DrawScreenSpaceUIPass m_DrawOffscreenUIPass;
@@ -68,6 +69,7 @@ namespace UnityEngine.Rendering.Universal
         internal bool m_CreateColorTexture;
         internal bool m_CreateDepthTexture;
         bool ppcUpscaleRT = false;
+        static internal bool s_IsLightingActive;
 
         PostProcessPassRenderGraph m_PostProcessPassRenderGraph;
         ColorGradingLutPass m_ColorGradingLutPassRenderGraph;
@@ -117,6 +119,7 @@ namespace UnityEngine.Rendering.Universal
 
             m_UpscalePass = new UpscalePass(RenderPassEvent.AfterRenderingPostProcessing, m_BlitMaterial);
             m_CopyCameraSortingLayerPass = new CopyCameraSortingLayerPass(m_BlitMaterial);
+            m_CapturePass = new CapturePass(RenderPassEvent.AfterRendering);
             m_FinalBlitPass = new FinalBlitPass(RenderPassEvent.AfterRendering + k_FinalBlitPassQueueOffset, m_BlitMaterial, m_BlitHDRMaterial);
             m_OffscreenUICoverPrepass = new FinalBlitPass(RenderPassEvent.BeforeRenderingPostProcessing, m_BlitMaterial, m_BlitOffscreenUICoverMaterial);
 
@@ -192,6 +195,11 @@ namespace UnityEngine.Rendering.Universal
                 inputSummary.requiresColorTexture |= needsColor;
             }
 
+            // Volumetric shadow pass requires intermediate texture
+            bool hasVolumetricShadowPass = false;
+            for (int i = 0; i < m_BatchCount; ++i)
+                hasVolumetricShadowPass |= m_LayerBatches[i].lightStats.useVolumetricShadowLights;
+
             inputSummary.requiresColorTexture |= cameraData.postProcessEnabled
                     || cameraData.isHdrEnabled
                     || cameraData.isSceneViewCamera
@@ -201,7 +209,9 @@ namespace UnityEngine.Rendering.Universal
                     || cameraData.cameraTargetDescriptor.msaaSamples > 1 && UniversalRenderer.PlatformRequiresExplicitMsaaResolve()
                     || m_Renderer2DData.useCameraSortingLayerTexture
                     || !Mathf.Approximately(cameraData.renderScale, 1.0f)
-                    || (DebugHandler != null && DebugHandler.WriteToDebugScreenTexture(cameraData.resolveFinalTarget));
+                    || (DebugHandler != null && DebugHandler.WriteToDebugScreenTexture(cameraData.resolveFinalTarget))
+                    || cameraData.captureActions != null
+                    || hasVolumetricShadowPass;
 
             return inputSummary;
         }
@@ -340,8 +350,10 @@ namespace UnityEngine.Rendering.Universal
         void InitializeLayerBatches()
         {
             Universal2DResourceData resourceData = frameData.Get<Universal2DResourceData>();
+            UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
 
             m_LayerBatches = LayerUtility.CalculateBatches(m_Renderer2DData, out m_BatchCount);
+            s_IsLightingActive = IsSceneViewOrPreviewLightingActive(cameraData);
 
             // Initialize textures dependent on batch size
             if (resourceData.normalsTexture.Length != m_BatchCount)
@@ -958,6 +970,12 @@ namespace UnityEngine.Rendering.Universal
             var finalBlitTarget = resolveToDebugScreen ? commonResourceData.debugScreenColor : commonResourceData.backBufferColor;
             var finalDepthHandle = resolveToDebugScreen ? commonResourceData.debugScreenDepth : commonResourceData.backBufferDepth;
 
+            // Capture pass for Unity Recorder
+            if (hasCaptureActions)
+            {
+                m_CapturePass.RecordRenderGraph(renderGraph, frameData);
+            }
+            
             if (applyFinalPostProcessing)
             {
                 m_PostProcessPassRenderGraph.RenderFinalPassRenderGraph(renderGraph, frameData, in finalColorHandle, commonResourceData.overlayUITexture, in finalBlitTarget, needsColorEncoding);
@@ -1065,5 +1083,21 @@ namespace UnityEngine.Rendering.Universal
         }
 
         internal override bool supportsNativeRenderPassRendergraphCompiler => true;
+
+        static internal bool IsSceneViewOrPreviewLightingActive(UniversalCameraData cameraData)
+        {
+            DebugHandler debugHandler = ScriptableRenderPass.GetActiveDebugHandler(cameraData);
+            var isLightingActive = debugHandler?.IsLightingActive ?? true;
+
+#if UNITY_EDITOR
+            if (cameraData.isSceneViewCamera && UnityEditor.SceneView.currentDrawingSceneView != null)
+                isLightingActive &= UnityEditor.SceneView.currentDrawingSceneView.sceneLighting;
+
+            if (cameraData.isPreviewCamera && cameraData.camera.name == "Preview Scene Camera")
+                isLightingActive = false;
+#endif
+
+            return isLightingActive;
+        }
     }
 }
