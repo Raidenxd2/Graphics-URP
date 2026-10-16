@@ -16,6 +16,11 @@ namespace UnityEngine.Rendering.Universal
         /// Use this to select quarter size as the starting resolution.
         /// </summary>
         Quarter,
+        
+        /// <summary>
+        /// Use this to select full size as the starting resolution.
+        /// </summary>
+        Full
     }
 
     /// <summary>

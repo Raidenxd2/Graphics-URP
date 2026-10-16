@@ -674,6 +674,9 @@ namespace UnityEngine.Rendering.Universal
                 case BloomDownscaleMode.Quarter:
                     downres = 2;
                     break;
+                case BloomDownscaleMode.Full:
+                    downres = 0;
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
