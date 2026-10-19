@@ -306,8 +306,10 @@ namespace UnityEngine.Rendering.Universal
             requireColorTexture |= HasPassesRequiringIntermediateTexture(activeRenderPassQueue);
             requireColorTexture |= RequiresIntermediateColorTexture(cameraData, in renderPassInputs, usesDeferredLighting, applyPostProcessing);
 
+            bool requestedDepthHistory = (cameraData.historyManager == null) ? false : cameraData.historyManager.IsAccessRequested<RawDepthHistory>();
+
             // Intermediate texture has different yflip state than backbuffer. In case we use intermediate texture, we must use both color and depth together.
-            return (requireColorTexture || requireCopyFromDepth);
+            return (requireColorTexture || requireCopyFromDepth || requestedDepthHistory);
         }
 
         // Gather history render requests and manage camera history texture life-time.
@@ -592,8 +594,11 @@ namespace UnityEngine.Rendering.Universal
                 bool xrMultipassEnabled = false;
                 int multipassId = 0;
 #if ENABLE_VR && ENABLE_XR_MODULE
-                xrMultipassEnabled = cameraData.xr.enabled && !cameraData.xr.singlePassEnabled;
-                multipassId = cameraData.xr.multipassId;
+                if (BeanShootoutURP.EnableXRRenderingSupport)
+                {
+                    xrMultipassEnabled = cameraData.xr.enabled && !cameraData.xr.singlePassEnabled;
+                    multipassId = cameraData.xr.multipassId;
+                }
 #endif
 
                 if (history.IsAccessRequested<BeforeTransparentsColorHistory>() && resourceData.cameraColor.IsValid())
