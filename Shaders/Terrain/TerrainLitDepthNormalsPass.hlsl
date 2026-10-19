@@ -100,6 +100,22 @@ void DepthNormalOnlyFragment(
     normalWS = NormalizeNormalPerPixel(normalWS);
 
     outNormalWS = half4(normalWS, 0.0);
+    
+#if defined(_WRITE_SMOOTHNESS)
+        half4 hasMask = half4(_LayerHasMask0, _LayerHasMask1, _LayerHasMask2, _LayerHasMask3);
+        half4 masks[4];
+        ComputeMasks(masks, hasMask, IN.uvSplat01, IN.uvSplat23);
+
+        half weight;
+        half4 mixedDiffuse;
+        half4 defaultSmoothness;
+        SplatmapMix(IN.uvMainAndLM, IN.uvSplat01, IN.uvSplat23, splatControl, weight, mixedDiffuse, defaultSmoothness, normalTS);
+        half4 maskSmoothness = half4(masks[0].a, masks[1].a, masks[2].a, masks[3].a);
+        defaultSmoothness = lerp(defaultSmoothness, maskSmoothness, hasMask);
+        half smoothness = dot(splatControl, defaultSmoothness);
+
+        outNormalWS.a = smoothness;
+#endif
 
     #ifdef _WRITE_RENDERING_LAYERS
     outRenderingLayers = EncodeMeshRenderingLayer();

@@ -15,6 +15,8 @@ Shader "Universal Render Pipeline/Simple Lit"
         _SmoothnessSource("Smoothness Source", Float) = 0.0
         _SpecularHighlights("Specular Highlights", Float) = 1.0
 
+        [ToggleUI] _ScreenSpaceReflectionsContributeTransparent("Screen Space Reflections Contribute Transparent", Float) = 1.0
+
         [HideInInspector] _BumpScale("Scale", Float) = 1.0
         [NoScaleOffset] _BumpMap("Normal Map", 2D) = "bump" {}
 

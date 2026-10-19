@@ -15,6 +15,7 @@ namespace ShaderStrippingAndPrefiltering
         {
             internal bool isAssetUsingforward = true;
             internal bool everyRendererHasSSAO = false;
+            internal bool everyRendererHasSSR = false;
             internal bool stripXRKeywords = true;
             internal bool stripHDRKeywords = true;
             internal bool stripDebugDisplay = true;
@@ -36,7 +37,7 @@ namespace ShaderStrippingAndPrefiltering
 #if SURFACE_CACHE
                 return ShaderBuildPreprocessor.CreatePrefilteringSettings(ref shaderFeatures, isAssetUsingforward, everyRendererHasSSAO, stripXRKeywords, stripHDRKeywords, stripDebugDisplay, stripScreenCoordOverride, stripBicubicLightmapSampling, stripReflectionProbeRotation, stripScreenSpaceIrradiance, stripUnusedVariants, ref ssaoRendererFeatures);
 #else
-                return ShaderBuildPreprocessor.CreatePrefilteringSettings(ref shaderFeatures, isAssetUsingforward, everyRendererHasSSAO, stripXRKeywords, stripHDRKeywords, stripDebugDisplay, stripScreenCoordOverride, stripBicubicLightmapSampling, stripReflectionProbeRotation, stripUnusedVariants, ref ssaoRendererFeatures);
+                return ShaderBuildPreprocessor.CreatePrefilteringSettings(ref shaderFeatures, isAssetUsingforward, everyRendererHasSSAO, everyRendererHasSSR, stripXRKeywords, stripHDRKeywords, stripDebugDisplay, stripScreenCoordOverride, stripBicubicLightmapSampling, stripReflectionProbeRotation, stripUnusedVariants, ref ssaoRendererFeatures);
 #endif
 
             }

@@ -1,14 +1,18 @@
 using System;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace UnityEditor.Rendering.Universal.ShaderGUI
 {
     internal class UnlitShader : BaseShaderGUI
     {
+        MaterialProperty screenSpaceReflectionsContributeTransparentProp;
+
         // material changed check
         public override void ValidateMaterial(Material material)
         {
             SetMaterialKeywords(material);
+            UpdateScreenSpaceReflectionContributeTransparentPassState(material);
         }
 
         // material main surface options
@@ -21,6 +25,13 @@ namespace UnityEditor.Rendering.Universal.ShaderGUI
             EditorGUIUtility.labelWidth = 0f;
 
             base.DrawSurfaceOptions(material);
+
+            if (screenSpaceReflectionsContributeTransparentProp != null)
+            {
+                bool isTransparent = material.renderQueue >= (int)RenderQueue.Transparent;
+                if (isTransparent)
+                    materialEditor.ShaderProperty(screenSpaceReflectionsContributeTransparentProp, LitGUI.Styles.screenSpaceReflectionsContributeTransparentText);
+            }
         }
 
         // material main surface inputs

@@ -29,6 +29,7 @@ namespace ShaderStrippingAndPrefiltering
             internal bool containsSurfaceCache;
 #endif
             internal bool everyRendererHasSSAO;
+            internal bool everyRendererHasSSR;
 
             internal ShaderFeatures defaultURPAssetFeatures
             {
@@ -108,7 +109,7 @@ namespace ShaderStrippingAndPrefiltering
 #if SURFACE_CACHE
                 return ShaderBuildPreprocessor.GetSupportedShaderFeaturesFromAsset(ref urpAsset, ref rendererShaderFeatures, ref ssaoRendererFeatures, stripUnusedVariants, out containsForwardRenderer, out containsSurfaceCache, out everyRendererHasSSAO);
 #else
-                return ShaderBuildPreprocessor.GetSupportedShaderFeaturesFromAsset(ref urpAsset, ref rendererShaderFeatures, ref ssaoRendererFeatures, stripUnusedVariants, out containsForwardRenderer, out everyRendererHasSSAO);
+                return ShaderBuildPreprocessor.GetSupportedShaderFeaturesFromAsset(ref urpAsset, ref rendererShaderFeatures, ref ssaoRendererFeatures, stripUnusedVariants, out containsForwardRenderer, out everyRendererHasSSAO, out everyRendererHasSSR);
 #endif
             }
 

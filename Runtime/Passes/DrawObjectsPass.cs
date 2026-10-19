@@ -31,6 +31,11 @@ namespace UnityEngine.Rendering.Universal.Internal
         /// </summary>
         public bool m_ShouldTransparentsReceiveShadows;
 
+        /// <summary>
+        /// Used to indicate whether transparent objects should receive screen space reflections or not.
+        /// </summary>
+        public bool shouldTransparentsReceiveSSR { get; set; }
+
         static readonly int s_DrawObjectPassDataPropID = Shader.PropertyToID("_DrawObjectPassData");
 
 #if URP_COMPATIBILITY_MODE
@@ -97,6 +102,7 @@ namespace UnityEngine.Rendering.Universal.Internal
             m_RenderStateBlock = new RenderStateBlock(RenderStateMask.Nothing);
             m_IsOpaque = opaque;
             m_ShouldTransparentsReceiveShadows = false;
+            shouldTransparentsReceiveSSR = false;
 
             if (stencilState.enabled)
             {
@@ -191,10 +197,13 @@ namespace UnityEngine.Rendering.Universal.Internal
             internal TextureHandle albedoHdl;
             internal TextureHandle depthHdl;
             internal TextureHandle screenSpaceIrradianceHdl;
+            internal TextureHandle screenSpaceReflectionHdl;
+            internal TextureHandle screenSpaceReflectionRayDistanceHdl;
 
             internal UniversalCameraData cameraData;
             internal bool isOpaque;
             internal bool shouldTransparentsReceiveShadows;
+            internal bool shouldTransparentsReceiveSSR;
             internal uint batchLayerMask;
             internal bool isActiveTargetBackBuffer;
 			internal RendererListHandle rendererListHdl;
@@ -215,6 +224,7 @@ namespace UnityEngine.Rendering.Universal.Internal
             passData.cameraData = cameraData;
             passData.isOpaque = m_IsOpaque;
             passData.shouldTransparentsReceiveShadows = m_ShouldTransparentsReceiveShadows;
+            passData.shouldTransparentsReceiveSSR = shouldTransparentsReceiveSSR;
             passData.batchLayerMask = batchLayerMask;
             passData.isActiveTargetBackBuffer = isActiveTargetBackBuffer;
         }
@@ -324,6 +334,28 @@ namespace UnityEngine.Rendering.Universal.Internal
                     builder.UseTexture(irradianceTexture, AccessFlags.Read);
                 }
 
+                TextureHandle ssrTexture = resourceData.ssrTexture;
+                if (ssrTexture.IsValid())
+                {
+                    passData.screenSpaceReflectionHdl = ssrTexture;
+                    builder.UseTexture(ssrTexture, AccessFlags.Read);
+                }
+                else
+                {
+                    passData.screenSpaceReflectionHdl = TextureHandle.nullHandle;
+                }
+
+                TextureHandle ssrRayDistanceTexture = resourceData.ssrRayDistanceTexture;
+                if (ssrRayDistanceTexture.IsValid())
+                {
+                    passData.screenSpaceReflectionRayDistanceHdl = ssrRayDistanceTexture;
+                    builder.UseTexture(ssrRayDistanceTexture, AccessFlags.Read);
+                }
+                else
+                {
+                    passData.screenSpaceReflectionRayDistanceHdl = TextureHandle.nullHandle;
+                }
+
                 RenderGraphUtils.UseDBufferIfValid(builder, resourceData);
 
                 InitRendererLists(renderingData, cameraData, lightData, ref passData, default(ScriptableRenderContext), renderGraph, true, disableZWrite);
@@ -367,6 +399,16 @@ namespace UnityEngine.Rendering.Universal.Internal
                     if (useScreenSpaceIrradiance)
                     {
                         context.cmd.SetGlobalTexture(ShaderPropertyId.screenSpaceIrradiance, data.screenSpaceIrradianceHdl);
+                    }
+
+                    bool useSSR = data.screenSpaceReflectionHdl.IsValid() && (data.isOpaque || data.shouldTransparentsReceiveSSR);
+                    context.cmd.SetKeyword(ShaderGlobalKeywords.ScreenSpaceReflection, useSSR);
+                    if (useSSR)
+                    {
+                        context.cmd.SetGlobalTexture(ShaderPropertyId.screenSpaceReflection, data.screenSpaceReflectionHdl);
+
+                        if (data.screenSpaceReflectionRayDistanceHdl.IsValid())
+                            context.cmd.SetGlobalTexture(ShaderPropertyId.screenSpaceReflectionRayDistance, data.screenSpaceReflectionRayDistanceHdl);
                     }
 
                     ExecutePass(context.cmd, data, data.rendererListHdl, data.objectsWithErrorRendererListHdl, yFlip);

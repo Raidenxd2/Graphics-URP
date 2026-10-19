@@ -76,6 +76,7 @@ namespace UnityEditor.Rendering.Universal
 #if SURFACE_CACHE
         SurfaceCache = (1L << 53),
 #endif
+        ScreenSpaceReflection = (1L << 55),
         All = ~0
     }
 
@@ -466,7 +467,8 @@ namespace UnityEditor.Rendering.Universal
 #if SURFACE_CACHE
                     out bool containsSurfaceCache,
 #endif
-                    out bool everyRendererHasSSAO
+                    out bool everyRendererHasSSAO,
+                    out bool everyRendererHasSSR
                 );
 
 #if SURFACE_CACHE
@@ -479,6 +481,7 @@ namespace UnityEditor.Rendering.Universal
                     ref urpAssetShaderFeatures,
                     containsForwardRenderer,
                     everyRendererHasSSAO,
+                    everyRendererHasSSR,
                     s_StripXRVariants,
                     !PlayerSettings.allowHDRDisplaySupport || !urpAsset.supportsHDR,
                     s_StripDebugDisplayShaders,
@@ -514,7 +517,8 @@ namespace UnityEditor.Rendering.Universal
 #if SURFACE_CACHE
             out bool containsSurfaceCache,
 #endif
-            out bool everyRendererHasSSAO)
+            out bool everyRendererHasSSAO,
+            out bool everyRendererHasSSR)
         {
             ShaderFeatures urpAssetShaderFeatures = ShaderFeatures.MainLight;
 
@@ -602,7 +606,8 @@ namespace UnityEditor.Rendering.Universal
 #if SURFACE_CACHE
                 out containsSurfaceCache,
 #endif
-                out everyRendererHasSSAO);
+                out everyRendererHasSSAO,
+                out everyRendererHasSSR);
 
             return urpAssetShaderFeatures;
         }
@@ -618,7 +623,8 @@ namespace UnityEditor.Rendering.Universal
 #if SURFACE_CACHE
             out bool containsSurfaceCache,
 #endif
-            out bool everyRendererHasSSAO)
+            out bool everyRendererHasSSAO,
+            out bool everyRendererHasSSR)
         {
             // Sanity check
             if (rendererFeaturesList == null)
@@ -634,6 +640,7 @@ namespace UnityEditor.Rendering.Universal
             containsSurfaceCache = false;
 #endif
             everyRendererHasSSAO = true;
+            everyRendererHasSSR = true;
             ScriptableRendererData[] rendererDataArray = urpAsset.m_RendererDataList;
             for (int rendererIndex = 0; rendererIndex < rendererDataArray.Length; ++rendererIndex)
             {
@@ -652,6 +659,8 @@ namespace UnityEditor.Rendering.Universal
                 // Check to see if the Surface Cache feature is enabled
                 containsSurfaceCache |= IsFeatureEnabled(rendererShaderFeatures, ShaderFeatures.SurfaceCache);
 #endif
+
+                everyRendererHasSSR &= IsFeatureEnabled(rendererShaderFeatures, ShaderFeatures.ScreenSpaceReflection);
 
                 // Check to see if it's possible to remove the OFF variant for SSAO
                 everyRendererHasSSAO &= IsFeatureEnabled(rendererShaderFeatures, ShaderFeatures.ScreenSpaceOcclusion);
@@ -877,6 +886,15 @@ namespace UnityEditor.Rendering.Universal
                 }
 #endif
 
+                // Screen Space Reflection (SSR)...
+                // Removing the OFF variant requires every renderer to use SSR. That is checked later.
+                ScreenSpaceReflectionRendererFeature ssrFeature = rendererFeature as ScreenSpaceReflectionRendererFeature;
+                if (ssrFeature != null)
+                {
+                    shaderFeatures |= ShaderFeatures.ScreenSpaceReflection;
+                    continue;
+                }
+
                 // Decals...
                 DecalRendererFeature decal = rendererFeature as DecalRendererFeature;
                 if (decal != null && rendererRequirements.isUniversalRenderer)
@@ -978,6 +996,7 @@ namespace UnityEditor.Rendering.Universal
             ref ShaderFeatures shaderFeatures,
             bool isAssetUsingForward,
             bool everyRendererHasSSAO,
+            bool everyRendererHasSSR,
             bool stripXR,
             bool stripHDR,
             bool stripDebug,
@@ -1014,6 +1033,7 @@ namespace UnityEditor.Rendering.Universal
 #else
             spd.stripScreenSpaceIrradiance = true;
 #endif
+            spd.stripWriteSmoothness = !IsFeatureEnabled(shaderFeatures, ShaderFeatures.ScreenSpaceReflection);
 
             // Rendering Modes
             // Check if only Deferred is being used
@@ -1114,6 +1134,17 @@ namespace UnityEditor.Rendering.Universal
                 // Otherwise we keep both
                 else
                     spd.screenSpaceOcclusionPrefilteringMode = PrefilteringMode.Select;
+            }
+
+            spd.screenSpaceReflectionPrefilteringMode = PrefilteringMode.Remove;
+            if (IsFeatureEnabled(shaderFeatures, ShaderFeatures.ScreenSpaceReflection))
+            {
+                // Remove the SSR's OFF variant if Global Settings allow it and every renderer uses it.
+                if (stripUnusedVariants && everyRendererHasSSR)
+                    spd.screenSpaceReflectionPrefilteringMode = PrefilteringMode.SelectOnly;
+                // Otherwise we keep both
+                else
+                    spd.screenSpaceReflectionPrefilteringMode = PrefilteringMode.Select;
             }
 
             // SSAO shader keywords

@@ -44,9 +44,10 @@ namespace UnityEngine.Rendering.Universal.Internal
         /// <seealso cref="RenderPassEvent"/>
         /// <seealso cref="RenderQueueRange"/>
         /// <seealso cref="LayerMask"/>
-        public DepthNormalOnlyPass(RenderPassEvent evt, RenderQueueRange renderQueueRange, LayerMask layerMask)
+        public DepthNormalOnlyPass(RenderPassEvent evt, RenderQueueRange renderQueueRange, LayerMask layerMask, ProfilingSampler sampler = null)
         {
-            profilingSampler = ProfilingSampler.Get(URPProfileId.DrawDepthNormalPrepass);
+            // profilingSampler = ProfilingSampler.Get(URPProfileId.DrawDepthNormalPrepass);
+            profilingSampler = sampler ?? ProfilingSampler.Get(URPProfileId.DrawDepthNormalPrepass);
             m_FilteringSettings = new FilteringSettings(renderQueueRange, layerMask);
             renderPassEvent = evt;
             this.shaderTagIds = k_DepthNormals;
@@ -136,6 +137,8 @@ namespace UnityEngine.Rendering.Universal.Internal
             // Enable Rendering Layers
             if (passData.enableRenderingLayers)
                 cmd.SetKeyword(ShaderGlobalKeywords.WriteRenderingLayers, true);
+            if (passData.outputSmoothness)
+                cmd.SetKeyword(ShaderGlobalKeywords.WriteSmoothness, true);
 
             // Draw
             cmd.DrawRendererList(rendererList);
@@ -143,6 +146,8 @@ namespace UnityEngine.Rendering.Universal.Internal
             // Clean up
             if (passData.enableRenderingLayers)
                 cmd.SetKeyword(ShaderGlobalKeywords.WriteRenderingLayers, false);
+            if (passData.outputSmoothness)
+                cmd.SetKeyword(ShaderGlobalKeywords.WriteSmoothness, false);
         }
 
 #if URP_COMPATIBILITY_MODE
@@ -192,6 +197,7 @@ namespace UnityEngine.Rendering.Universal.Internal
         private class PassData
         {
             internal bool enableRenderingLayers;
+            internal bool outputSmoothness;
             internal RenderingLayerUtils.MaskSize maskSize;
             internal RendererListHandle rendererList;
         }
@@ -225,6 +231,7 @@ namespace UnityEngine.Rendering.Universal.Internal
                 builder.SetRenderAttachmentDepth(depthTexture, AccessFlags.ReadWrite);
 
                 passData.enableRenderingLayers = enableRenderingLayers;
+                passData.outputSmoothness = renderingData.writesSmoothnessToDepthNormalsAlpha;
 
                 if (passData.enableRenderingLayers)
                 {
@@ -253,8 +260,9 @@ namespace UnityEngine.Rendering.Universal.Internal
                 if (setGlobalDepth)
                     builder.SetGlobalTextureAfterPass(depthTexture, s_CameraDepthTextureID);
 
-                // Required here because of RenderingLayerUtils.SetupProperties
-                builder.AllowGlobalStateModification(true);
+                // Required here because of RenderingLayerUtils.SetupProperties, and for setting keywords in ExecutePass
+                if (passData.enableRenderingLayers || passData.outputSmoothness)
+                    builder.AllowGlobalStateModification(true);
 
                 builder.SetRenderFunc((PassData data, RasterGraphContext context) =>
                 {
@@ -262,6 +270,16 @@ namespace UnityEngine.Rendering.Universal.Internal
                     ExecutePass(context.cmd, data, data.rendererList);
                 });
             }
+        }
+
+        /// <summary>
+        /// Gets the sorting criteria to use for a given camera. Override to customize behavior.
+        /// </summary>
+        /// <param name="cameraData">The UniversalCameraData of the camera to get sorting criteria for.</param>
+        /// <returns>The sorting criteria to use.</returns>
+        protected virtual SortingCriteria GetSortingCriteria(UniversalCameraData cameraData)
+        {
+            return cameraData.defaultOpaqueSortFlags;
         }
     }
 }

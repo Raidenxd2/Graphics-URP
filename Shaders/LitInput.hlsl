@@ -7,6 +7,7 @@
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/ParallaxMapping.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/DebugMipmapStreamingMacros.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/MetallicSpecGloss.hlsl"
 
 #if defined(_DETAIL_MULX2) || defined(_DETAIL_SCALED)
 #define _DETAIL
@@ -128,6 +129,11 @@ TEXTURE2D(_MetallicGlossMap);   SAMPLER(sampler_MetallicGlossMap);
 TEXTURE2D(_SpecGlossMap);       SAMPLER(sampler_SpecGlossMap);
 TEXTURE2D(_ClearCoatMap);       SAMPLER(sampler_ClearCoatMap);
 
+half4 SampleBaseMap(float2 uv)
+{
+    return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv);
+}
+
 #ifdef _SPECULAR_SETUP
     #define SAMPLE_METALLICSPECULAR(uv) SAMPLE_TEXTURE2D(_SpecGlossMap, sampler_SpecGlossMap, uv)
 #else
@@ -172,6 +178,14 @@ half SampleOcclusion(float2 uv)
     #endif
 }
 
+half4 SampleMetallicGlossMap(float2 uv)
+{
+    return SAMPLE_TEXTURE2D(_MetallicGlossMap, sampler_MetallicGlossMap, uv);
+}
+half4 SampleSpecGlossMap(float2 uv)
+{
+    return SAMPLE_TEXTURE2D(_SpecGlossMap, sampler_SpecGlossMap, uv);
+}
 
 // Returns clear coat parameters
 // .x/.r == mask

@@ -582,6 +582,36 @@ namespace UnityEngine.Rendering.Universal
             }
         }
 
+        // Copy internal color buffer before transparents into the history.
+        private void RenderBeforeTransparentsColorHistory(RenderGraph renderGraph, UniversalCameraData cameraData, UniversalResourceData resourceData)
+        {
+            if (cameraData != null && cameraData.historyManager != null && resourceData != null)
+            {
+                UniversalCameraHistory history = cameraData.historyManager;
+
+                bool xrMultipassEnabled = false;
+                int multipassId = 0;
+#if ENABLE_VR && ENABLE_XR_MODULE
+                xrMultipassEnabled = cameraData.xr.enabled && !cameraData.xr.singlePassEnabled;
+                multipassId = cameraData.xr.multipassId;
+#endif
+
+                if (history.IsAccessRequested<BeforeTransparentsColorHistory>() && resourceData.cameraColor.IsValid())
+                {
+                    var colorHistory = history.GetHistoryForWrite<BeforeTransparentsColorHistory>();
+                    if (colorHistory != null)
+                    {
+                        colorHistory.Update(cameraData, xrMultipassEnabled);
+                        if (colorHistory.GetCurrentTexture(multipassId) != null)
+                        {
+                            var colorHistoryTarget = renderGraph.ImportTexture(colorHistory.GetCurrentTexture(multipassId));
+                            m_HistoryBeforeTransparentsColorCopyPass.RenderToExistingTexture(renderGraph, frameData, colorHistoryTarget, resourceData.cameraColor, Downsampling.None);
+                        }
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Called before recording the render graph. Can be used to initialize resources.
         /// </summary>
@@ -1309,11 +1339,16 @@ namespace UnityEngine.Rendering.Universal
             }
 #endif
 
+            RenderBeforeTransparentsColorHistory(renderGraph, cameraData, resourceData);
+
             // TODO RENDERGRAPH: bind _CameraOpaqueTexture, _CameraDepthTexture in transparent pass?
 #if ENABLE_ADAPTIVE_PERFORMANCE
             if (needTransparencyPass)
 #endif
             {
+                var ssrSettings = VolumeManager.instance.stack.GetComponent<ScreenSpaceReflectionVolumeSettings>();
+                m_RenderTransparentForwardPass.shouldTransparentsReceiveSSR = ssrSettings.ShouldRenderTransparents();
+
                 m_RenderTransparentForwardPass.m_ShouldTransparentsReceiveShadows = !m_TransparentSettingsPass.Setup();
                 m_RenderTransparentForwardPass.Render(
                     renderGraph,

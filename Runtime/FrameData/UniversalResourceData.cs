@@ -339,6 +339,27 @@ namespace UnityEngine.Rendering.Universal
         private TextureHandle _irradianceTexture;
 
         /// <summary>
+        /// Screen Space reflection texture.
+        /// </summary>
+        internal TextureHandle ssrTexture
+        {
+            get => CheckAndGetTextureHandle(ref _ssrTexture);
+            set => CheckAndSetTextureHandle(ref _ssrTexture, value);
+        }
+        private TextureHandle _ssrTexture;
+
+        /// <summary>
+        /// Screen Space reflection ray travel distances, blurred into a mip chain. Only valid when contact hardening
+        /// is enabled.
+        /// </summary>
+        internal TextureHandle ssrRayDistanceTexture
+        {
+            get => CheckAndGetTextureHandle(ref _ssrRayDistanceTexture);
+            set => CheckAndSetTextureHandle(ref _ssrRayDistanceTexture, value);
+        }
+        private TextureHandle _ssrRayDistanceTexture;
+
+        /// <summary>
         /// STP debug visualization written to by the STP upscaler.
         /// </summary>
         internal TextureHandle stpDebugView
@@ -371,6 +392,8 @@ namespace UnityEngine.Rendering.Universal
             _dBufferDepth = TextureHandle.nullHandle;
             _ssaoTexture = TextureHandle.nullHandle;
             _irradianceTexture = TextureHandle.nullHandle;
+            _ssrTexture = TextureHandle.nullHandle;
+            _ssrRayDistanceTexture = TextureHandle.nullHandle;
             _stpDebugView = TextureHandle.nullHandle;
 
             for (int i = 0; i < _gBuffer.Length; i++)

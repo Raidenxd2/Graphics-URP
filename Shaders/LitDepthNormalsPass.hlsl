@@ -18,7 +18,7 @@
 #define REQUIRES_WORLD_SPACE_TANGENT_INTERPOLATOR
 #endif
 
-#if defined(_ALPHATEST_ON) || defined(_PARALLAXMAP) || defined(_NORMALMAP) || defined(_DETAIL)
+#if defined(_ALPHATEST_ON) || defined(_PARALLAXMAP) || defined(_NORMALMAP) || defined(_DETAIL) || defined(_WRITE_SMOOTHNESS)
 #define REQUIRES_UV_INTERPOLATOR
 #endif
 
@@ -98,6 +98,10 @@ void DepthNormalsFragment(
 {
     UNITY_SETUP_INSTANCE_ID(input);
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+        
+    #if defined(_ALPHATEST_ON) || defined(_WRITE_SMOOTHNESS)
+        float alpha = SampleBaseMap(input.uv).a;
+    #endif
 
     #if defined(_ALPHATEST_ON)
         Alpha(SampleAlbedoAlpha(input.uv, TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap)).a, _BaseColor, _Cutoff);
@@ -140,6 +144,22 @@ void DepthNormalsFragment(
         #endif
 
         outNormalWS = half4(NormalizeNormalPerPixel(normalWS), 0.0);
+    
+    #endif
+        
+    #if defined(_WRITE_SMOOTHNESS) && !defined(_SCREENSPACEREFLECTIONS_OFF)
+        half4 specGloss;
+        if (UseMetallicSpecGlossMap())
+        {
+            specGloss = IsSpecularSetup() ? SampleSpecGlossMap(input.uv) : SampleMetallicGlossMap(input.uv);
+            specGloss.a = UseSmoothnessTextureAlbedoChannelA() ? alpha * _Smoothness : specGloss.a * _Smoothness;
+        }
+        else
+        {
+            specGloss.rgb = IsSpecularSetup() ? _SpecColor.rgb : _Metallic.rrr;
+            specGloss.a = UseSmoothnessTextureAlbedoChannelA() ? alpha * _Smoothness : _Smoothness;
+        }
+        outNormalWS.a = specGloss.a;
     #endif
 
     #ifdef _WRITE_RENDERING_LAYERS

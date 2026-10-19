@@ -21,6 +21,11 @@ Shader "Universal Render Pipeline/Lit"
 
         [ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1.0
         [ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 1.0
+        [ToggleOff] _ScreenSpaceReflections("Screen Space Reflections", Float) = 1.0
+        [ToggleUI] _ScreenSpaceReflectionsContributeTransparent("Screen Space Reflections Contribute Transparent", Float) = 1.0
+
+        [ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1.0
+        [ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 1.0
 
         _BumpScale("Scale", Float) = 1.0
         _BumpMap("Normal Map", 2D) = "bump" {}
@@ -131,6 +136,7 @@ Shader "Universal Render Pipeline/Lit"
             #pragma shader_feature_local_fragment _OCCLUSIONMAP
             #pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
             #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+            #pragma shader_feature_local_fragment _SCREENSPACEREFLECTIONS_OFF
             #pragma shader_feature_local_fragment _SPECULAR_SETUP
 
             // -------------------------------------
@@ -271,6 +277,7 @@ Shader "Universal Render Pipeline/Lit"
 
             #pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
             #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+            #pragma shader_feature_local_fragment _SCREENSPACEREFLECTIONS_OFF
             #pragma shader_feature_local_fragment _SPECULAR_SETUP
             #pragma shader_feature_local _RECEIVE_SHADOWS_OFF
 
@@ -390,6 +397,7 @@ Shader "Universal Render Pipeline/Lit"
             #pragma shader_feature_local _ _DETAIL_MULX2 _DETAIL_SCALED
             #pragma shader_feature_local _ALPHATEST_ON
             #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+            #pragma shader_feature_local_fragment _SCREENSPACEREFLECTIONS_OFF
 
             // -------------------------------------
             // Unity defined keywords
@@ -398,6 +406,7 @@ Shader "Universal Render Pipeline/Lit"
             // -------------------------------------
             // Universal Pipeline keywords
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
+            #pragma multi_compile _WRITE_SMOOTHNESS
 
             //--------------------------------------
             // GPU Instancing

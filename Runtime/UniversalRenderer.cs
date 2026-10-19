@@ -180,6 +180,7 @@ namespace UnityEngine.Rendering.Universal
         DrawScreenSpaceUIPass m_DrawOverlayUIPass;
 
         CopyColorPass m_HistoryRawColorCopyPass;
+        CopyColorPass m_HistoryBeforeTransparentsColorCopyPass;
         CopyDepthPass m_HistoryRawDepthCopyPass;
 
         StencilCrossFadeRenderPass m_StencilCrossFadeRenderPass;
@@ -434,6 +435,7 @@ namespace UnityEngine.Rendering.Universal
             // History generation passes for "raw color/depth". These execute only if explicitly requested by users.
             // VFX system particles uses these. See RawColorHistory.cs.
             m_HistoryRawColorCopyPass = new CopyColorPass(RenderPassEvent.BeforeRenderingPostProcessing, m_SamplingMaterial, m_BlitMaterial, customPassName: "Copy Color Raw History");
+            m_HistoryBeforeTransparentsColorCopyPass = new CopyColorPass(RenderPassEvent.BeforeRenderingTransparents, m_SamplingMaterial, m_BlitMaterial, customPassName: "Copy Color History Before Transparents");
             m_HistoryRawDepthCopyPass = new CopyDepthPass(RenderPassEvent.BeforeRenderingPostProcessing, copyDephPS, false, RenderingUtils.MultisampleDepthResolveSupported(), customPassName: "Copy Depth Raw History");
 
             m_DrawOffscreenUIPass = new DrawScreenSpaceUIPass(RenderPassEvent.BeforeRenderingPostProcessing, true);

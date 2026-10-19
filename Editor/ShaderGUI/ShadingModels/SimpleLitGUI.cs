@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Scripting.APIUpdating;
+using static UnityEditor.Rendering.UpgradeUtility;
 
 namespace UnityEditor.Rendering.Universal.ShaderGUI
 {
@@ -92,6 +93,11 @@ namespace UnityEditor.Rendering.Universal.ShaderGUI
             public MaterialProperty bumpMapProp;
 
             /// <summary>
+            /// The MaterialProperty for screen space reflections contribute transparent.
+            /// </summary>
+            public MaterialProperty screenSpaceReflectionsContributeTransparent;
+
+            /// <summary>
             /// Constructor for the <c>SimpleLitProperties</c> container struct.
             /// </summary>
             /// <param name="properties"></param>
@@ -104,6 +110,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGUI
                 smoothnessMapChannel = BaseShaderGUI.FindProperty("_SmoothnessSource", properties, false);
                 smoothness = BaseShaderGUI.FindProperty("_Smoothness", properties, false);
                 bumpMapProp = BaseShaderGUI.FindProperty("_BumpMap", properties, false);
+                screenSpaceReflectionsContributeTransparent = BaseShaderGUI.FindProperty(Property.ScreenSpaceReflectionsContributeTransparent, properties, false);
             }
         }
 
@@ -123,7 +130,9 @@ namespace UnityEditor.Rendering.Universal.ShaderGUI
         /// Draws the advanced GUI.
         /// </summary>
         /// <param name="properties"></param>
-        public static void Advanced(SimpleLitProperties properties)
+        /// <param name="materialEditor">The material editor.</param>
+        /// <param name="material">The material to use.</param>
+        public static void Advanced(SimpleLitProperties properties, MaterialEditor materialEditor, Material material)
         {
             SpecularSource specularSource = (SpecularSource)properties.specHighlights.floatValue;
             EditorGUI.BeginChangeCheck();
@@ -132,6 +141,13 @@ namespace UnityEditor.Rendering.Universal.ShaderGUI
             if (EditorGUI.EndChangeCheck())
                 properties.specHighlights.floatValue = enabled ? (float)SpecularSource.SpecularTextureAndColor : (float)SpecularSource.NoSpecular;
             EditorGUI.showMixedValue = false;
+
+            if (properties.screenSpaceReflectionsContributeTransparent != null)
+            {
+                bool isTransparent = material.renderQueue >= (int)UnityEngine.Rendering.RenderQueue.Transparent;
+                if (isTransparent)
+                    materialEditor.ShaderProperty(properties.screenSpaceReflectionsContributeTransparent, LitGUI.Styles.screenSpaceReflectionsContributeTransparentText);
+            }
         }
 
         /// <summary>
@@ -156,6 +172,8 @@ namespace UnityEditor.Rendering.Universal.ShaderGUI
         public static void SetMaterialKeywords(Material material)
         {
             UpdateMaterialSpecularSource(material);
+
+            BaseShaderGUI.UpdateScreenSpaceReflectionContributeTransparentPassState(material);
         }
 
         private static void UpdateMaterialSpecularSource(Material material)

@@ -25,6 +25,11 @@ Shader "Universal Render Pipeline/Complex Lit"
         [ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1.0
         [ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 1.0
 
+        [ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1.0
+        [ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 1.0
+        [ToggleOff] _ScreenSpaceReflections("Screen Space Reflections", Float) = 1.0
+        [ToggleUI] _ScreenSpaceReflectionsContributeTransparent("Screen Space Reflections Contribute Transparent", Float) = 1.0
+
         _BumpScale("Scale", Float) = 1.0
         _BumpMap("Normal Map", 2D) = "bump" {}
 
@@ -131,6 +136,7 @@ Shader "Universal Render Pipeline/Complex Lit"
             #pragma shader_feature_local_fragment _ _CLEARCOAT _CLEARCOATMAP
             #pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
             #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+            #pragma shader_feature_local_fragment _SCREENSPACEREFLECTIONS_OFF
             #pragma shader_feature_local_fragment _SPECULAR_SETUP
 
             // -------------------------------------
@@ -144,6 +150,7 @@ Shader "Universal Render Pipeline/Complex Lit"
             #pragma multi_compile_fragment _ _REFLECTION_PROBE_BLENDING
             #pragma multi_compile_fragment _ _REFLECTION_PROBE_BOX_PROJECTION
             #pragma multi_compile_fragment _ _REFLECTION_PROBE_ATLAS
+            #pragma multi_compile_fragment _ _SCREEN_SPACE_REFLECTION
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fragment _ _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
@@ -274,6 +281,7 @@ Shader "Universal Render Pipeline/Complex Lit"
 
             #pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
             #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+            #pragma shader_feature_local_fragment _SCREENSPACEREFLECTIONS_OFF
             #pragma shader_feature_local_fragment _SPECULAR_SETUP
             #pragma shader_feature_local _RECEIVE_SHADOWS_OFF
 
@@ -284,6 +292,7 @@ Shader "Universal Render Pipeline/Complex Lit"
             //#pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _REFLECTION_PROBE_BLENDING
             #pragma multi_compile_fragment _ _REFLECTION_PROBE_BOX_PROJECTION
+            #pragma multi_compile_fragment _ _SCREEN_SPACE_REFLECTION
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fragment _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
             #pragma multi_compile_fragment _ _RENDER_PASS_ENABLED
@@ -392,11 +401,13 @@ Shader "Universal Render Pipeline/Complex Lit"
             #pragma shader_feature_local _ _DETAIL_MULX2 _DETAIL_SCALED
             #pragma shader_feature_local _ALPHATEST_ON
             #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+            #pragma shader_feature_local_fragment _SCREENSPACEREFLECTIONS_OFF
 
             // -------------------------------------
             // Universal Pipeline keywords
             #pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT // forward-only variant
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
+            #pragma multi_compile _ _WRITE_SMOOTHNESS
 
             // -------------------------------------
             // Unity defined keywords

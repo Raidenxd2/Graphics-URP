@@ -90,6 +90,20 @@ namespace UnityEditor.Rendering.Universal.ShaderGUI
                     "When enabled, the Material samples reflections from the nearest Reflection Probes or Lighting Probe.");
 
             /// <summary>
+            /// The text and tooltip for the screen space reflections GUI.
+            /// </summary>
+            public static GUIContent screenSpaceReflectionsText =
+                EditorGUIUtility.TrTextContent("Screen Space Reflections",
+                    "When enabled, the Material samples screen space reflections.");
+
+            /// <summary>
+            /// The text and tooltip for the screen space reflections contribute transparent GUI.
+            /// </summary>
+            public static GUIContent screenSpaceReflectionsContributeTransparentText =
+                EditorGUIUtility.TrTextContent("Contribute Screen Space Reflections",
+                    "When enabled, this Material will contribute to screen space reflections. This will include the object in the transparency-depth prepass.");
+
+            /// <summary>
             /// The text and tooltip for the height map GUI.
             /// </summary>
             public static GUIContent heightMapText = EditorGUIUtility.TrTextContent("Height Map",
@@ -223,6 +237,16 @@ namespace UnityEditor.Rendering.Universal.ShaderGUI
             public MaterialProperty reflections;
 
             /// <summary>
+            /// The MaterialProperty for screen space reflections.
+            /// </summary>
+            public MaterialProperty screenSpaceReflections;
+
+            /// <summary>
+            /// The MaterialProperty for screen space reflections contribute transparent.
+            /// </summary>
+            public MaterialProperty screenSpaceReflectionsContributeTransparent;
+
+            /// <summary>
             /// The MaterialProperty for enabling/disabling clear coat.
             /// </summary>
             public MaterialProperty clearCoat;  // Enable/Disable dummy property
@@ -266,6 +290,8 @@ namespace UnityEditor.Rendering.Universal.ShaderGUI
                 // Advanced Props
                 highlights = BaseShaderGUI.FindProperty("_SpecularHighlights", properties, false);
                 reflections = BaseShaderGUI.FindProperty("_EnvironmentReflections", properties, false);
+                screenSpaceReflections = BaseShaderGUI.FindProperty(Property.ScreenSpaceReflections, properties, false);
+                screenSpaceReflectionsContributeTransparent = BaseShaderGUI.FindProperty(Property.ScreenSpaceReflectionsContributeTransparent, properties, false);
 
                 clearCoat = BaseShaderGUI.FindProperty("_ClearCoat", properties, false);
                 clearCoatMap = BaseShaderGUI.FindProperty("_ClearCoatMap", properties, false);
@@ -470,6 +496,8 @@ namespace UnityEditor.Rendering.Universal.ShaderGUI
             if (material.HasProperty("_EnvironmentReflections"))
                 CoreUtils.SetKeyword(material, "_ENVIRONMENTREFLECTIONS_OFF",
                     material.GetFloat("_EnvironmentReflections") == 0.0f);
+            BaseShaderGUI.UpdateScreenSpaceReflectionsKeyword(material);
+            BaseShaderGUI.UpdateScreenSpaceReflectionContributeTransparentPassState(material);
             if (material.HasProperty("_OcclusionMap"))
                 CoreUtils.SetKeyword(material, "_OCCLUSIONMAP", material.GetTexture("_OcclusionMap"));
 

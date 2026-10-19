@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using UnityEngine.Experimental.Rendering;
 
 namespace UnityEngine.Rendering.Universal
@@ -138,6 +139,23 @@ namespace UnityEngine.Rendering.Universal
         internal static void SetSourceSize(CommandBuffer cmd, RTHandle source)
         {
             SetSourceSize(CommandBufferHelpers.GetRasterCommandBuffer(cmd), source);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static Vector4 CalcShaderSourceSize(float width, float height, RenderTexture rt)
+        {
+            if (rt != null && rt.useDynamicScale)
+            {
+                width *= ScalableBufferManager.widthScaleFactor;
+                height *= ScalableBufferManager.heightScaleFactor;
+            }
+            return new Vector4(width, height, 1.0f / width, 1.0f / height);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static Vector4 CalcShaderSourceSize(RTHandle source)
+        {
+            return CalcShaderSourceSize(source.rt.width, source.rt.height, source.rt);
         }
 
         // Precomputed shader ids to same some CPU cycles (mostly affects mobile)

@@ -167,6 +167,16 @@ namespace UnityEngine.Rendering.Universal.Internal
                 cmd.SetGlobalTexture(ShaderPropertyId.screenSpaceIrradiance, data.screenSpaceIrradianceHdl);
             }
 
+            bool useSSR = data.screenSpaceReflectionHdl.IsValid();
+            cmd.SetKeyword(ShaderGlobalKeywords.ScreenSpaceReflection, useSSR);
+            if (useSSR)
+            {
+                cmd.SetGlobalTexture(ShaderPropertyId.screenSpaceReflection, data.screenSpaceReflectionHdl);
+
+                if (data.screenSpaceReflectionRayDistanceHdl.IsValid())
+                    cmd.SetGlobalTexture(ShaderPropertyId.screenSpaceReflectionRayDistance, data.screenSpaceReflectionRayDistanceHdl);
+            }
+
             cmd.DrawRendererList(rendererList);
 
             // Render objects that did not match any shader pass with error shader
@@ -187,6 +197,8 @@ namespace UnityEngine.Rendering.Universal.Internal
             internal RendererListHandle objectsWithErrorRendererListHdl;
 
             internal TextureHandle screenSpaceIrradianceHdl;
+            internal TextureHandle screenSpaceReflectionHdl;
+            internal TextureHandle screenSpaceReflectionRayDistanceHdl;
 
 #if URP_COMPATIBILITY_MODE
             internal TextureHandle[] gbuffer;
@@ -260,6 +272,28 @@ namespace UnityEngine.Rendering.Universal.Internal
             {
                 passData.screenSpaceIrradianceHdl = irradianceTexture;
                 builder.UseTexture(irradianceTexture, AccessFlags.Read);
+            }
+
+            TextureHandle ssrTexture = resourceData.ssrTexture;
+            if (ssrTexture.IsValid())
+            {
+                passData.screenSpaceReflectionHdl = ssrTexture;
+                builder.UseTexture(ssrTexture, AccessFlags.Read);
+            }
+            else
+            {
+                passData.screenSpaceReflectionHdl = TextureHandle.nullHandle;
+            }
+
+            TextureHandle ssrRayDistanceTexture = resourceData.ssrRayDistanceTexture;
+            if (ssrRayDistanceTexture.IsValid())
+            {
+                passData.screenSpaceReflectionRayDistanceHdl = ssrRayDistanceTexture;
+                builder.UseTexture(ssrRayDistanceTexture, AccessFlags.Read);
+            }
+            else
+            {
+                passData.screenSpaceReflectionRayDistanceHdl = TextureHandle.nullHandle;
             }
 
             RenderGraphUtils.UseDBufferIfValid(builder, resourceData);

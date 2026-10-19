@@ -4,6 +4,8 @@
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/EntityLighting.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/ImageBasedLighting.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RealtimeLights.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SampleScreenSpaceReflection.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareExposureTexture.hlsl"
 
 #define AMBIENT_PROBE_BUFFER 0
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/AmbientProbe.hlsl"
@@ -420,6 +422,14 @@ half3 CalculateIrradianceFromReflectionProbes(half3 reflectVector, float3 positi
 half3 GlossyEnvironmentReflection(half3 reflectVector, float3 positionWS, half perceptualRoughness, half occlusion, float2 normalizedScreenSpaceUV)
 {
     half3 irradiance;
+    
+    #if defined(_SCREENSPACEREFLECTIONS_OFF)
+    half4 ssrColor = 0;
+    #else
+    half4 ssrColor = GetScreenSpaceReflection(normalizedScreenSpaceUV, positionWS, perceptualRoughness);
+    // The SSR texture is resolved from the pre-exposed camera color; undo that, as lighting inputs are un-exposed.
+    ssrColor.rgb *= GetInvPreExposureMultiplier();
+    #endif
 
 #if !defined(_ENVIRONMENTREFLECTIONS_OFF)
     if (_REFLECTION_PROBE_BLENDING)

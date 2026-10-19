@@ -31,6 +31,12 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
         [SerializeField]
         bool m_BlendModePreserveSpecular = true;
 
+        [SerializeField]
+        bool m_ScreenSpaceReflections = true;
+
+        [SerializeField]
+        bool m_ScreenSpaceReflectionsContributeTransparent = true;
+
         public UniversalLitSubTarget()
         {
             displayName = "Lit";
@@ -69,6 +75,18 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
         {
             get => m_BlendModePreserveSpecular;
             set => m_BlendModePreserveSpecular = value;
+        }
+
+        public bool screenSpaceReflections
+        {
+            get => m_ScreenSpaceReflections;
+            set => m_ScreenSpaceReflections = value;
+        }
+
+        public bool screenSpaceReflectionsContributeTransparent
+        {
+            get => m_ScreenSpaceReflectionsContributeTransparent;
+            set => m_ScreenSpaceReflectionsContributeTransparent = value;
         }
 
         public override bool IsActive() => true;
@@ -200,6 +218,12 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
             collector.AddFloatProperty(Property.QueueOffset, 0.0f);
             collector.AddFloatProperty(Property.QueueControl, -1.0f);
 
+            // Emitted unconditionally so UpdateScreenSpaceReflectionsKeyword and
+            // UpdateScreenSpaceReflectionContributeTransparentPassState can read the sub-target
+            // defaults at material-update time to configure the runtime keyword and pass state.
+            collector.AddToggleProperty(Property.ScreenSpaceReflections, screenSpaceReflections);
+            collector.AddToggleProperty(Property.ScreenSpaceReflectionsContributeTransparent, screenSpaceReflectionsContributeTransparent);
+
             if (IsSpacewarpSupported())
                 collector.AddFloatProperty(Property.XrMotionVectorsPass, 1.0f);
         }
@@ -240,6 +264,36 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 clearCoat = evt.newValue;
                 onChange();
             });
+
+            bool isTransparent = target.surfaceType == SurfaceType.Transparent;
+
+            // Disable the Receive SSR toggle when transparent and not contributing. Without
+            // contributing to the SSR depth prepass, the material would sample the reflection of
+            // whatever sits behind it.
+            var receiveToggle = new Toggle() { value = screenSpaceReflections };
+            receiveToggle.SetEnabled(!isTransparent || screenSpaceReflectionsContributeTransparent);
+            context.AddProperty("Screen Space Reflections", receiveToggle, (evt) =>
+            {
+                if (Equals(screenSpaceReflections, evt.newValue))
+                    return;
+
+                registerUndo("Change Screen Space Reflections");
+                screenSpaceReflections = evt.newValue;
+                onChange();
+            });
+
+            if (isTransparent)
+            {
+                context.AddProperty("Screen Space Reflections Contribute Transparent", new Toggle() { value = screenSpaceReflectionsContributeTransparent }, (evt) =>
+                {
+                    if (Equals(screenSpaceReflectionsContributeTransparent, evt.newValue))
+                        return;
+
+                    registerUndo("Change Screen Space Reflections Contribute Transparent");
+                    screenSpaceReflectionsContributeTransparent = evt.newValue;
+                    onChange();
+                });
+            }
 
             if (target.surfaceType == SurfaceType.Transparent)
             {
@@ -538,7 +592,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                     renderStates = CoreRenderStates.UberSwitchedRenderState(target, blendModePreserveSpecular),
                     pragmas = CorePragmas.GBuffer,
                     defines = new DefineCollection { CoreDefines.UseFragmentFog },
-                    keywords = new KeywordCollection { LitKeywords.GBuffer },
+                    keywords = new KeywordCollection { LitKeywords.GBuffer, LitKeywords.ScreenSpaceReflectionsOff },
                     includes = new IncludeCollection { LitIncludes.GBuffer },
 
                     // Custom Interpolator Support
@@ -655,7 +709,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                     renderStates = CoreRenderStates.DepthNormalsOnly(target),
                     pragmas = CorePragmas.Instanced,
                     defines = new DefineCollection(),
-                    keywords = new KeywordCollection(),
+                    keywords = new KeywordCollection { CoreKeywordDescriptors.WriteSmoothness, LitKeywords.ScreenSpaceReflectionsOff},
                     includes = new IncludeCollection { CoreIncludes.DepthNormalsOnly },
 
                     // Custom Interpolator Support
@@ -695,7 +749,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                     renderStates = CoreRenderStates.DepthNormalsOnly(target),
                     pragmas = CorePragmas.Instanced,
                     defines = new DefineCollection(),
-                    keywords = new KeywordCollection(),
+                    keywords = new KeywordCollection { CoreKeywordDescriptors.WriteSmoothness, LitKeywords.ScreenSpaceReflectionsOff },
                     includes = new IncludeCollection { CoreIncludes.DepthNormalsOnly },
 
                     // Custom Interpolator Support
@@ -841,9 +895,21 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 scope = KeywordScope.Local,
             };
 
+            public static readonly KeywordDescriptor ScreenSpaceReflectionsOff = new KeywordDescriptor()
+            {
+                displayName = "Screen Space Reflections Off",
+                referenceName = "_SCREENSPACEREFLECTIONS_OFF",
+                type = KeywordType.Boolean,
+                definition = KeywordDefinition.ShaderFeature,
+                scope = KeywordScope.Local,
+                stages = KeywordShaderStage.Fragment,
+            };
+
             public static readonly KeywordCollection Forward = new KeywordCollection
             {
                 { CoreKeywordDescriptors.ScreenSpaceAmbientOcclusion },
+                { CoreKeywordDescriptors.ScreenSpaceReflection },
+                { ScreenSpaceReflectionsOff },
                 { CoreKeywordDescriptors.ScreenSpaceIrradiance },
                 { CoreKeywordDescriptors.StaticLightmap },
                 { CoreKeywordDescriptors.DynamicLightmap },
@@ -870,6 +936,8 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
 
             public static readonly KeywordCollection GBuffer = new KeywordCollection
             {
+                { CoreKeywordDescriptors.ScreenSpaceReflection },
+                { ScreenSpaceReflectionsOff },
                 { CoreKeywordDescriptors.ScreenSpaceIrradiance },
                 { CoreKeywordDescriptors.StaticLightmap },
                 { CoreKeywordDescriptors.DynamicLightmap },

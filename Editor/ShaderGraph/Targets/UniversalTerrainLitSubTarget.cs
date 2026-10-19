@@ -1056,7 +1056,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                     renderStates = CoreRenderStates.DepthNormalsOnly(target),
                     pragmas = TerrainCorePragmas.Instanced,
                     defines = new DefineCollection(),
-                    keywords = new KeywordCollection() { TerrainSubShaders.AlphaTestOn, },
+                    keywords = new KeywordCollection() { TerrainSubShaders.AlphaTestOn, CoreKeywordDescriptors.WriteSmoothness },
                     includes = TerrainCoreIncludes.DepthNormalsOnly,
 
                     // Custom Interpolator Support

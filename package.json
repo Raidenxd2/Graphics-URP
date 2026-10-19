@@ -31,11 +31,12 @@
     {
       "displayName": "Renderer Shader User Value Samples",
       "description": "Adds a set of examples using Renderer Shader User Value feature.",
-	  "path": "Samples~/RendererShaderUserValueSamples",
+      "path": "Samples~/RendererShaderUserValueSamples",
       "dependencies": [
         "com.unity.render-pipelines.core/Samples~/Common",
         "com.unity.render-pipelines.core/Samples~/RendererShaderUserValue_Common"
       ]
     }
-  ]
+  ],
+  "_fingerprint": "219d4681187674d0a42264705eca48a6930e1f21"
 }

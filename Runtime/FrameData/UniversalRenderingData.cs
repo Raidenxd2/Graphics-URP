@@ -70,6 +70,12 @@ namespace UnityEngine.Rendering.Universal
         /// </summary>
         public bool stencilLodCrossFadeEnabled { get; internal set; }
 
+        /// <summary>
+        /// True if per-pixel smoothness should be written to the alpha channel of the CameraDepthNormals texture, if it exists.
+        /// Used for screen space reflections.
+        /// </summary>
+        public bool writesSmoothnessToDepthNormalsAlpha { get; internal set; }
+
         /// <inheritdoc/>
         public override void Reset()
         {
@@ -84,6 +90,7 @@ namespace UnityEngine.Rendering.Universal
             prepassLayerMask = -1;
             opaqueLayerMask = -1;
             transparentLayerMask = -1;
+            writesSmoothnessToDepthNormalsAlpha = false;
         }
     }
 }
