@@ -1421,6 +1421,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
 
         public static readonly BlockFieldDescriptor[] FragmentDepthNormals = new BlockFieldDescriptor[]
         {
+            BlockFields.SurfaceDescription.Smoothness,
             BlockFields.SurfaceDescription.NormalOS,
             BlockFields.SurfaceDescription.NormalTS,
             BlockFields.SurfaceDescription.NormalWS,
