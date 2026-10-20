@@ -1,3 +1,4 @@
+using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
 namespace UnityEditor.Rendering.Universal
@@ -16,6 +17,11 @@ namespace UnityEditor.Rendering.Universal
         SerializedDataParameter m_HDRMinNits;
         SerializedDataParameter m_HDRMaxNits;
         SerializedDataParameter m_HDRAcesPreset;
+        SerializedDataParameter m_AgxContrast;
+        SerializedDataParameter m_AgxMidGrey;
+
+        static readonly GUIContent k_AgxContrast = EditorGUIUtility.TrTextContent("Contrast", "Contrast of the AgX tone curve. Higher deepens shadows and brightens highlights.");
+        static readonly GUIContent k_AgxMidGrey = EditorGUIUtility.TrTextContent("Mid Grey", "The screen brightness that a mid-grey (18%) subject maps to. Raise to lighten the overall image.");
 
         public override bool hasAdditionalProperties => true;
 
@@ -32,6 +38,8 @@ namespace UnityEditor.Rendering.Universal
             m_HDRMinNits = Unpack(o.Find(x => x.minNits));
             m_HDRMaxNits = Unpack(o.Find(x => x.maxNits));
             m_HDRAcesPreset = Unpack(o.Find(x => x.acesPreset));
+            m_AgxContrast = Unpack(o.Find(x => x.agxContrast));
+            m_AgxMidGrey = Unpack(o.Find(x => x.agxMidGrey));
         }
 
         public override void OnInspectorGUI()
@@ -45,6 +53,13 @@ namespace UnityEditor.Rendering.Universal
             {
                 EditorGUILayout.HelpBox("Tonemapping should only be used when working with High Dynamic Range (HDR). Please enable HDR through the active Render Pipeline Asset.", MessageType.Warning);
                 return;
+            }
+
+            // AgX tone-curve controls.
+            if (hdrTonemapMode == (int)TonemappingMode.AgX)
+            {
+                PropertyField(m_AgxContrast, k_AgxContrast);
+                PropertyField(m_AgxMidGrey, k_AgxMidGrey);
             }
 
             if (PlayerSettings.allowHDRDisplaySupport && hdrTonemapMode != (int)TonemappingMode.None)
@@ -84,6 +99,25 @@ namespace UnityEditor.Rendering.Universal
                         PropertyField(m_HDRPaperwhite);
                     }
                     EditorGUI.indentLevel--;
+                }
+                if (hdrTonemapMode == (int)TonemappingMode.AgX)
+                {
+                    PropertyField(m_HDRDetectPaperWhite);
+                    if (!m_HDRDetectPaperWhite.value.boolValue)
+                    {
+                        EditorGUI.indentLevel++;
+                        PropertyField(m_HDRPaperwhite);
+                        EditorGUI.indentLevel--;
+                    }
+
+                    // AgX consumes only max nits (shoulder headroom); min nits has no effect, so it is not shown.
+                    PropertyField(m_HDRDetectNitLimits);
+                    if (!m_HDRDetectNitLimits.value.boolValue)
+                    {
+                        EditorGUI.indentLevel++;
+                        PropertyField(m_HDRMaxNits);
+                        EditorGUI.indentLevel--;
+                    }
                 }
             }
         }

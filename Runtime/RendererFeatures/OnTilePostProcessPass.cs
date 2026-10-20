@@ -400,6 +400,13 @@ public class OnTilePostProcessPass : ScriptableRenderPass
                 tonemapping.mode.value == TonemappingMode.Neutral);
             CoreUtils.SetKeyword(m_OnTileUberMaterial, ShaderKeywordStrings.TonemapACES,
                 tonemapping.mode.value == TonemappingMode.ACES);
+            bool isAgX = tonemapping.mode.value == TonemappingMode.AgX;
+            CoreUtils.SetKeyword(m_OnTileUberMaterial, ShaderKeywordStrings.TonemapAgX, isAgX);
+            if (isAgX)
+            {
+                Tonemapping.GetAgXCurveConstants(tonemapping.agxContrast.value, tonemapping.agxMidGrey.value, out float agxToeA, out float agxSlope);
+                m_OnTileUberMaterial.SetVector(ShaderConstants._AgxParams, new Vector4(tonemapping.agxContrast.value, tonemapping.agxMidGrey.value, agxToeA, agxSlope));
+            }
         }
     }
 
@@ -440,5 +447,6 @@ public class OnTilePostProcessPass : ScriptableRenderPass
         public static readonly int _UserLut_Params = Shader.PropertyToID("_UserLut_Params");
         public static readonly int _InternalLut = Shader.PropertyToID("_InternalLut");
         public static readonly int _UserLut = Shader.PropertyToID("_UserLut");
+        public static readonly int _AgxParams = Shader.PropertyToID("_AgxParams");
     }
 }

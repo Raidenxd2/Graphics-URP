@@ -59,6 +59,8 @@ namespace UnityEngine.Rendering.Universal
             public static readonly int _Vignette_Params2 = Shader.PropertyToID("_Vignette_Params2");
             public static readonly int _Vignette_ParamsXR = Shader.PropertyToID("_Vignette_ParamsXR");
 
+            public static readonly int _AgxParams = Shader.PropertyToID("_AgxParams");
+
             // Color Lookup-table
             public static readonly int _InternalLut = Shader.PropertyToID("_InternalLut");
             public static readonly int _Lut_Params = Shader.PropertyToID("_Lut_Params");
@@ -2465,6 +2467,7 @@ namespace UnityEngine.Rendering.Universal
             internal Vector4 userLutParams;
             internal Material material;
             internal UniversalCameraData cameraData;
+            internal Tonemapping tonemapping;
             internal TonemappingMode toneMappingMode;
             internal bool isHdrGrading;
             internal bool isBackbuffer;
@@ -2495,7 +2498,7 @@ namespace UnityEngine.Rendering.Universal
 
         public void RenderUberPost(RenderGraph renderGraph, ContextContainer frameData, UniversalCameraData cameraData, UniversalPostProcessingData postProcessingData,
             in TextureHandle sourceTexture, in TextureHandle destTexture, in TextureHandle lutTexture, in TextureHandle bloomTexture, in TextureHandle overlayUITexture,
-            bool requireHDROutput, bool enableAlphaOutput)
+            bool requireHDROutput, bool enableAlphaOutput, Tonemapping tonemapping)
         {
             var material = m_Materials.uber;
             bool hdrGrading = postProcessingData.gradingMode == ColorGradingMode.HighDynamicRange;
@@ -2556,6 +2559,7 @@ namespace UnityEngine.Rendering.Universal
                 passData.isHdrGrading = hdrGrading;
                 passData.enableAlphaOutput = enableAlphaOutput;
                 passData.isActiveTargetBackBuffer = resourceData.isActiveTargetBackBuffer;
+                passData.tonemapping = tonemapping;
 
                 builder.SetRenderFunc(static (UberPostPassData data, RasterGraphContext context) =>
                 {
@@ -2583,6 +2587,11 @@ namespace UnityEngine.Rendering.Universal
                         {
                             case TonemappingMode.Neutral: CoreUtils.SetKeyword(material, ShaderKeywordStrings.TonemapNeutral, true); break;
                             case TonemappingMode.ACES: CoreUtils.SetKeyword(material, ShaderKeywordStrings.TonemapACES, true); break;
+                            case TonemappingMode.AgX:
+                                material.EnableKeyword(ShaderKeywordStrings.TonemapAgX);
+                                Tonemapping.GetAgXCurveConstants(data.tonemapping.agxContrast.value, data.tonemapping.agxMidGrey.value, out float agxToeA, out float agxSlope);
+                                material.SetVector(ShaderConstants._AgxParams, new Vector4(data.tonemapping.agxContrast.value, data.tonemapping.agxMidGrey.value, agxToeA, agxSlope));
+                                break;
                             default: break; // None
                         }
                     }
@@ -2909,7 +2918,7 @@ namespace UnityEngine.Rendering.Universal
                 DebugHandler debugHandler = ScriptableRenderPass.GetActiveDebugHandler(cameraData);
                 debugHandler?.UpdateShaderGlobalPropertiesForFinalValidationPass(renderGraph, cameraData, !m_HasFinalPass && !resolveToDebugScreen);
 
-                RenderUberPost(renderGraph, frameData, cameraData, postProcessingData, in currentSource, in postProcessingTarget, in lutTexture, in bloomTexture, in overlayUITexture, requireHDROutput, enableAlphaOutput);
+                RenderUberPost(renderGraph, frameData, cameraData, postProcessingData, in currentSource, in postProcessingTarget, in lutTexture, in bloomTexture, in overlayUITexture, requireHDROutput, enableAlphaOutput, m_Tonemapping);
             }
         }
 
