@@ -266,7 +266,10 @@ namespace UnityEngine.Rendering.Universal.Internal
 
                 builder.SetRenderFunc((PassData data, RasterGraphContext context) =>
                 {
-                    RenderingLayerUtils.SetupProperties(context.cmd, data.maskSize);
+                    if (data.enableRenderingLayers)
+                    {
+                        RenderingLayerUtils.SetupProperties(context.cmd, data.maskSize);
+                    }
                     ExecutePass(context.cmd, data, data.rendererList);
                 });
             }
