@@ -1005,7 +1005,7 @@ namespace UnityEngine.Rendering.Universal
 
                 builder.SetRenderFunc((PassData data, RasterGraphContext context) =>
                 {
-                    bool yFlipped = SystemInfo.graphicsUVStartsAtTop && RenderingUtils.IsHandleYFlipped(context, in data.target);
+                    bool yFlipped = BeanShootoutURP.CACHE_GraphicsUVStartsAtTop && RenderingUtils.IsHandleYFlipped(context, in data.target);
 
                     // This is still required because of the following reasons:
                     // - Camera billboard properties.
@@ -1028,16 +1028,19 @@ namespace UnityEngine.Rendering.Universal
                         data.renderer.SetPerCameraBillboardProperties(context.cmd, data.cameraData);
                     }
 
+                    if (BeanShootoutURP.SetShaderTimeValuesInSetupRenderGraphCameraProperties)
+                    {
 #if UNITY_EDITOR
-                    float time = Application.isPlaying ? Time.time : Time.realtimeSinceStartup;
+                        float time = Application.isPlaying ? Time.time : Time.realtimeSinceStartup;
 #else
-                    float time = Time.time;
+                        float time = Time.time;
 #endif
-                    float deltaTime = Time.deltaTime;
-                    float smoothDeltaTime = Time.smoothDeltaTime;
+                        float deltaTime = Time.deltaTime;
+                        float smoothDeltaTime = Time.smoothDeltaTime;
 
-                    // Reset shader time variables as they were overridden in SetupCameraProperties. If we don't do it we might have a mismatch between shadows and main rendering
-                    SetShaderTimeValues(context.cmd, time, deltaTime, smoothDeltaTime);
+                        // Reset shader time variables as they were overridden in SetupCameraProperties. If we don't do it we might have a mismatch between shadows and main rendering
+                        SetShaderTimeValues(context.cmd, time, deltaTime, smoothDeltaTime);
+                    }
                 });
             }
         }

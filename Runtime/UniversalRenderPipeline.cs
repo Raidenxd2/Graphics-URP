@@ -12,6 +12,7 @@ using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Profiling;
 using static UnityEngine.Camera;
+using static Unity.Burst.Intrinsics.X86.Avx;
 
 namespace UnityEngine.Rendering.Universal
 {
@@ -337,6 +338,18 @@ namespace UnityEngine.Rendering.Universal
 
             GraphicsSettings.lightsUseLinearIntensity = true;
             GraphicsSettings.lightsUseColorTemperature = true;
+
+            if (GraphicsSettings.TryGetRenderPipelineSettings<LightmapSamplingSettings>(out var lightmapSamplingSettings))
+                BeanShootoutURP.CACHE_UseBicubicLightmapSampling = lightmapSamplingSettings.useBicubicLightmapSampling;
+            else
+                BeanShootoutURP.CACHE_UseBicubicLightmapSampling = false;
+
+            if (GraphicsSettings.TryGetRenderPipelineSettings<URPReflectionProbeSettings>(out var reflectionProbeSettings))
+                BeanShootoutURP.CACHE_UseReflectionProbeRotation = reflectionProbeSettings.UseReflectionProbeRotation;
+            else
+                BeanShootoutURP.CACHE_UseReflectionProbeRotation = false;
+
+            BeanShootoutURP.CACHE_GraphicsUVStartsAtTop = SystemInfo.graphicsUVStartsAtTop;
         }
 
         /// <inheritdoc/>

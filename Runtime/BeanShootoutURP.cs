@@ -34,6 +34,19 @@ public static class BeanShootoutURP
     /// Determines if Motion Vectors should be supported.
     /// </summary>
     public static bool EnableMotionVectorsSupport;
+    /// <summary>
+    /// Determines if STP and TAA should be supported.
+    /// </summary>
+    public static bool EnableSTPAndTAASupport;
+    /// <summary>
+    /// Determines if SetShaderTimeValues should be called in SetupRenderGraphCameraProperties to prevent mismatch between shadows and main rendering
+    /// </summary>
+    public static bool SetShaderTimeValuesInSetupRenderGraphCameraProperties;
+
+    public static bool CACHE_UseBicubicLightmapSampling;
+    public static bool CACHE_UseReflectionProbeRotation;
+    public static bool CACHE_GraphicsUVStartsAtTop;
+
 #if KILLITMYSELF_URP
     /// <summary>
     /// Determines if EarlyCmd should be rendered. (EarlyCmd is the dark gray background rendered behind everything to prevent nothing from being repainted)

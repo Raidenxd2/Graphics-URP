@@ -1212,7 +1212,7 @@ namespace UnityEngine.Rendering.Universal
         public LightProbeSystem lightProbeSystem
         {
             get => m_LightProbeSystem;
-            internal set => m_LightProbeSystem = value;
+            set => m_LightProbeSystem = value;
         }
 
         /// <summary>

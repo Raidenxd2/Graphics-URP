@@ -423,7 +423,7 @@ namespace UnityEngine.Rendering.Universal
         /// <returns>True is the content is flipped in y.</returns>
         public bool IsHandleYFlipped(RTHandle handle)
         {
-            if (!SystemInfo.graphicsUVStartsAtTop)
+            if (!BeanShootoutURP.CACHE_GraphicsUVStartsAtTop)
                 return true;
 
             if (cameraType == CameraType.SceneView || cameraType == CameraType.Preview)
@@ -476,7 +476,7 @@ namespace UnityEngine.Rendering.Universal
         /// <returns> True if the render target's projection matrix is flipped. </returns>
         public bool IsRenderTargetProjectionMatrixFlipped(RTHandle color, RTHandle depth = null)
         {
-            if (!SystemInfo.graphicsUVStartsAtTop)
+            if (!BeanShootoutURP.CACHE_GraphicsUVStartsAtTop)
                 return true;
 
             return targetTexture != null || IsHandleYFlipped(color ?? depth);
@@ -489,7 +489,12 @@ namespace UnityEngine.Rendering.Universal
         /// <returns>True if TAA is requested</returns>
         internal bool IsTemporalAARequested()
         {
-            return antialiasing == AntialiasingMode.TemporalAntiAliasing;
+            if (BeanShootoutURP.EnableSTPAndTAASupport)
+            {
+                return antialiasing == AntialiasingMode.TemporalAntiAliasing;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -500,16 +505,21 @@ namespace UnityEngine.Rendering.Universal
         /// <returns>True if TAA is enabled</returns>
         internal bool IsTemporalAAEnabled()
         {
-            UniversalAdditionalCameraData additionalCameraData;
-            camera.TryGetComponent(out additionalCameraData);
+            if (BeanShootoutURP.EnableSTPAndTAASupport)
+            {
+                UniversalAdditionalCameraData additionalCameraData;
+                camera.TryGetComponent(out additionalCameraData);
 
-            return IsTemporalAARequested()                                                                                            // Requested
-                   && postProcessEnabled                                                                                              // Postprocessing Enabled
-                   && (taaHistory != null)                                                                                            // Initialized
-                   && (cameraTargetDescriptor.msaaSamples == 1)                                                                       // No MSAA
-                   && !(additionalCameraData?.renderType == CameraRenderType.Overlay || additionalCameraData?.cameraStack.Count > 0)  // No Camera stack
-                   && !camera.allowDynamicResolution                                                                                  // No Dynamic Resolution
-                   && renderer.SupportsMotionVectors();                                                                               // Motion Vectors implemented
+                return IsTemporalAARequested()                                                                                            // Requested
+                       && postProcessEnabled                                                                                              // Postprocessing Enabled
+                       && (taaHistory != null)                                                                                            // Initialized
+                       && (cameraTargetDescriptor.msaaSamples == 1)                                                                       // No MSAA
+                       && !(additionalCameraData?.renderType == CameraRenderType.Overlay || additionalCameraData?.cameraStack.Count > 0)  // No Camera stack
+                       && !camera.allowDynamicResolution                                                                                  // No Dynamic Resolution
+                       && renderer.SupportsMotionVectors();                                                                               // Motion Vectors implemented
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -519,7 +529,12 @@ namespace UnityEngine.Rendering.Universal
         /// <returns>True if STP is requested</returns>
         internal bool IsSTPRequested()
         {
-            return (imageScalingMode == ImageScalingMode.Upscaling) && (upscalingFilter == ImageUpscalingFilter.STP);
+            if (BeanShootoutURP.EnableSTPAndTAASupport)
+            {
+                return (imageScalingMode == ImageScalingMode.Upscaling) && (upscalingFilter == ImageUpscalingFilter.STP);
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -533,7 +548,12 @@ namespace UnityEngine.Rendering.Universal
         /// <returns>True if STP is enabled</returns>
         internal bool IsSTPEnabled()
         {
-            return IsSTPRequested() && IsTemporalAAEnabled();
+            if (BeanShootoutURP.EnableSTPAndTAASupport)
+            {
+                return IsSTPRequested() && IsTemporalAAEnabled();
+            }
+
+            return false;
         }
 
         /// <summary>

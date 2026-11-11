@@ -1763,7 +1763,7 @@ namespace UnityEngine.Rendering.Universal
 
             //Backbuffer orientation is used for either the actual backbuffer (not a texture), or in XR for the eye texture.
             bool useActualBackbufferOrienation = !cameraData.isSceneViewCamera && !cameraData.isPreviewCamera && cameraData.targetTexture == null;
-            TextureUVOrigin backbufferTextureUVOrigin = useActualBackbufferOrienation ? (SystemInfo.graphicsUVStartsAtTop ? TextureUVOrigin.TopLeft : TextureUVOrigin.BottomLeft) : TextureUVOrigin.BottomLeft;
+            TextureUVOrigin backbufferTextureUVOrigin = useActualBackbufferOrienation ? (BeanShootoutURP.CACHE_GraphicsUVStartsAtTop ? TextureUVOrigin.TopLeft : TextureUVOrigin.BottomLeft) : TextureUVOrigin.BottomLeft;
 
             ImportResourceParams importBackbufferColorParams = new ImportResourceParams();
             importBackbufferColorParams.clearOnFirstUse = clearBackbufferOnFirstUse;

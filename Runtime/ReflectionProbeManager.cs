@@ -296,7 +296,7 @@ namespace UnityEngine.Rendering.Universal
                         var dataIndex = cachedProbe.dataIndices[mip];
                         // If we need to y-flip we will instead flip the atlas since that is updated less frequent and then the lookup should be correct.
                         // By doing this we won't have to y-flip the lookup in the shader code. 
-                        var scaleBias = GetScaleOffset(level, dataIndex, true, !SystemInfo.graphicsUVStartsAtTop);
+                        var scaleBias = GetScaleOffset(level, dataIndex, true, !BeanShootoutURP.CACHE_GraphicsUVStartsAtTop);
                         var sizeWithoutPadding = (1 << (m_AtlasAllocator.levelCount + 1 - level)) - 2;
                         Blitter.BlitCubeToOctahedral2DQuadWithPadding(cmd, cachedProbe.texture, new Vector2(sizeWithoutPadding, sizeWithoutPadding), scaleBias, mip, true, 2, cachedProbe.hdrData);
                     }

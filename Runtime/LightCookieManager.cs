@@ -616,7 +616,7 @@ namespace UnityEngine.Rendering.Universal
                 }
 
                 // Adjust atlas UVs for OpenGL
-                if (!SystemInfo.graphicsUVStartsAtTop)
+                if (!BeanShootoutURP.CACHE_GraphicsUVStartsAtTop)
                     uvScaleOffset.w = 1.0f - uvScaleOffset.w - uvScaleOffset.y;
 
                 textureAtlasUVRects[uvRectCount++] = uvScaleOffset;
