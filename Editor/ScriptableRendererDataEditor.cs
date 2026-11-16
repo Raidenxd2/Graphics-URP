@@ -365,4 +365,13 @@ namespace UnityEditor.Rendering.Universal
             AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath(target));
         }
     }
+
+    /// <summary>
+    /// Implement this interface on a custom Editor for a ScriptableRendererFeature to receive the renderer data that owns the feature when the inspector is drawn.
+    /// </summary>
+    internal interface IOwningRendererDataConsumer
+    {
+        /// <summary>The renderer data that contains this feature. Set by the drawer before OnInspectorGUI, cleared after.</summary>
+        public ScriptableRendererData owningRendererData { get; set; }
+    }
 }

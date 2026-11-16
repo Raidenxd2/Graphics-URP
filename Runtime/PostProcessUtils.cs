@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using UnityEngine.Experimental.Rendering;
+using UnityEngine.Rendering.RenderGraphModule;
 
 namespace UnityEngine.Rendering.Universal
 {
@@ -8,6 +9,36 @@ namespace UnityEngine.Rendering.Universal
     /// </summary>
     public static class PostProcessUtils
     {
+        /// <summary>
+        /// Converts existing descriptor into a post-processing compatible descriptor.
+        /// </summary>
+        /// <param name="desc">Source texture descriptor.</param>
+        /// <param name="width">Texture width.</param>
+        /// <param name="height">Texture height.</param>
+        /// <param name="format">Texture format.</param>
+        /// <returns>Texture descriptor compatible with post-processing.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static TextureDesc GetCompatibleDescriptor(TextureDesc desc, int width, int height, GraphicsFormat format)
+        {
+            desc.width = width;
+            desc.height = height;
+            desc.format = format;
+
+            MakeCompatible(ref desc);
+
+            return desc;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void MakeCompatible(ref TextureDesc desc)
+        {
+            desc.msaaSamples = MSAASamples.None;
+            desc.useMipMap = false;
+            desc.autoGenerateMips = false;
+            desc.anisoLevel = 0;
+            desc.discardBuffer = false;
+        }
+
         /// <summary>
         /// Configures the blue noise dithering used.
         /// </summary>
@@ -145,6 +176,17 @@ namespace UnityEngine.Rendering.Universal
         internal static Vector4 CalcShaderSourceSize(float width, float height, RenderTexture rt)
         {
             if (rt != null && rt.useDynamicScale)
+            {
+                width *= ScalableBufferManager.widthScaleFactor;
+                height *= ScalableBufferManager.heightScaleFactor;
+            }
+            return new Vector4(width, height, 1.0f / width, 1.0f / height);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static Vector4 CalcShaderSourceSize(float width, float height, bool useDynamicScale)
+        {
+            if (useDynamicScale)
             {
                 width *= ScalableBufferManager.widthScaleFactor;
                 height *= ScalableBufferManager.heightScaleFactor;

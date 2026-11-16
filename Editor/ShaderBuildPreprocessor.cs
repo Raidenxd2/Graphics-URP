@@ -863,14 +863,14 @@ namespace UnityEditor.Rendering.Universal
                 ScreenSpaceAmbientOcclusion ssaoFeature = rendererFeature as ScreenSpaceAmbientOcclusion;
                 if (ssaoFeature != null)
                 {
+#pragma warning disable CS0618 // ScreenSpaceAmbientOcclusion.settings is obsolete
                     ScreenSpaceAmbientOcclusionSettings ssaoSettings = ssaoFeature.settings;
+#pragma warning restore CS0618
                     ssaoRendererFeatures.Add(ssaoSettings);
 
-                    // The feature is active (Tested a few lines above) so check for AfterOpaque
-                    if (ssaoSettings.AfterOpaque)
-                        shaderFeatures |= ShaderFeatures.ScreenSpaceOcclusionAfterOpaque;
-                    else
-                        shaderFeatures |= ShaderFeatures.ScreenSpaceOcclusion;
+                    // The volume can switch between before/after opaque at runtime,
+                    // so the build must conservatively keep both keyword paths when SSAO is enabled.
+                    shaderFeatures |= ShaderFeatures.ScreenSpaceOcclusion | ShaderFeatures.ScreenSpaceOcclusionAfterOpaque;
 
                     // Otherwise the keyword will not be used
                     continue;
@@ -1013,6 +1013,8 @@ namespace UnityEditor.Rendering.Universal
             bool isAssetUsingForwardPlus = IsFeatureEnabled(shaderFeatures, ShaderFeatures.ForwardPlus);
             bool isAssetUsingDeferredPlus = IsFeatureEnabled(shaderFeatures, ShaderFeatures.DeferredPlus);
             bool isAssetUsingDeferred = IsFeatureEnabled(shaderFeatures, ShaderFeatures.DeferredShading);
+            bool hasSSAORendererFeature = ssaoRendererFeatures.Count > 0;
+            bool usesScreenSpaceOcclusion = IsFeatureEnabled(shaderFeatures, ShaderFeatures.ScreenSpaceOcclusion) || hasSSAORendererFeature;
 
             ShaderPrefilteringData spd = new();
             spd.stripXRKeywords = stripXR;
@@ -1125,16 +1127,8 @@ namespace UnityEditor.Rendering.Universal
             spd.useLegacyLightmaps = IsFeatureEnabled(shaderFeatures, ShaderFeatures.UseLegacyLightmaps);
 
             // Screen Space Ambient Occlusion
-            spd.screenSpaceOcclusionPrefilteringMode = PrefilteringMode.Remove;
-            if (IsFeatureEnabled(shaderFeatures, ShaderFeatures.ScreenSpaceOcclusion))
-            {
-                // Remove the SSAO's OFF variant if Global Settings allow it and every renderer uses it.
-                if (stripUnusedVariants && everyRendererHasSSAO)
-                    spd.screenSpaceOcclusionPrefilteringMode = PrefilteringMode.SelectOnly;
-                // Otherwise we keep both
-                else
-                    spd.screenSpaceOcclusionPrefilteringMode = PrefilteringMode.Select;
-            }
+            // The volume can disable SSAO at runtime, so the OFF variant is kept whenever the feature is used.
+            spd.screenSpaceOcclusionPrefilteringMode = usesScreenSpaceOcclusion ? PrefilteringMode.Select : PrefilteringMode.Remove;
 
             spd.screenSpaceReflectionPrefilteringMode = PrefilteringMode.Remove;
             if (IsFeatureEnabled(shaderFeatures, ShaderFeatures.ScreenSpaceReflection))
@@ -1148,29 +1142,9 @@ namespace UnityEditor.Rendering.Universal
             }
 
             // SSAO shader keywords
-            spd.stripSSAODepthNormals      = true;
-            spd.stripSSAOSourceDepthLow    = true;
-            spd.stripSSAOSourceDepthMedium = true;
-            spd.stripSSAOSourceDepthHigh   = true;
-            spd.stripSSAOBlueNoise         = true;
-            spd.stripSSAOInterleaved       = true;
-            spd.stripSSAOSampleCountLow    = true;
-            spd.stripSSAOSampleCountMedium = true;
-            spd.stripSSAOSampleCountHigh   = true;
-            for (int i = 0; i < ssaoRendererFeatures.Count; i++)
-            {
-                ScreenSpaceAmbientOcclusionSettings ssaoSettings = ssaoRendererFeatures[i];
-                bool isUsingDepthNormals = ssaoSettings.Source == ScreenSpaceAmbientOcclusionSettings.DepthSource.DepthNormals;
-                spd.stripSSAODepthNormals      &= !isUsingDepthNormals;
-                spd.stripSSAOSourceDepthLow    &= isUsingDepthNormals || ssaoSettings.NormalSamples != ScreenSpaceAmbientOcclusionSettings.NormalQuality.Low;
-                spd.stripSSAOSourceDepthMedium &= isUsingDepthNormals || ssaoSettings.NormalSamples != ScreenSpaceAmbientOcclusionSettings.NormalQuality.Medium;
-                spd.stripSSAOSourceDepthHigh   &= isUsingDepthNormals || ssaoSettings.NormalSamples != ScreenSpaceAmbientOcclusionSettings.NormalQuality.High;
-                spd.stripSSAOBlueNoise         &= ssaoSettings.AOMethod != ScreenSpaceAmbientOcclusionSettings.AOMethodOptions.BlueNoise;
-                spd.stripSSAOInterleaved       &= ssaoSettings.AOMethod != ScreenSpaceAmbientOcclusionSettings.AOMethodOptions.InterleavedGradient;
-                spd.stripSSAOSampleCountLow    &= ssaoSettings.Samples != ScreenSpaceAmbientOcclusionSettings.AOSampleOption.Low;
-                spd.stripSSAOSampleCountMedium &= ssaoSettings.Samples != ScreenSpaceAmbientOcclusionSettings.AOSampleOption.Medium;
-                spd.stripSSAOSampleCountHigh   &= ssaoSettings.Samples != ScreenSpaceAmbientOcclusionSettings.AOSampleOption.High;
-            }
+            // The volume can change the depth source, noise method and sample count at runtime,
+            // so every SSAO keyword is kept when the feature is present on a renderer.
+            spd.stripSSAOKeywords = !hasSSAORendererFeature;
 
             return spd;
         }
